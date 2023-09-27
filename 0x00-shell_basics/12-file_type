@@ -1,0 +1,3 @@
+#!/bin/bash
+file_path="/tmp/iamafile"
+file "$file_path"
