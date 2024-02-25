@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# infinity loop handle the SIGTER
+# Requirement: In between each iteration of the loop, add a sleep 2
+trap "echo I am invincible!!!" SIGTERM
+while :
+do
+	echo "To infinity and beyond"
+	sleep 2
+done
