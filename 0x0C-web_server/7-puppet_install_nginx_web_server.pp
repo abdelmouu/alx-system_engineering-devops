@@ -1,37 +1,38 @@
-# Install Nginx web server with Puppet
-include stdlib
-
-$link = 'https://www.youtube.com/watch?v=QH2-TGUlwu4'
-$content = "\trewrite ^/redirect_me/$ ${link} permanent;"
-
-exec { 'update packages':
-  command => '/usr/bin/apt-get update'
-}
-
-exec { 'restart nginx':
-  command => '/usr/sbin/service nginx restart',
-  require => Package['nginx']
-}
-
+# Install Nginx
 package { 'nginx':
-  ensure  => 'installed',
-  require => Exec['update packages']
+  ensure => installed,
 }
 
+# Configure Nginx
 file { '/var/www/html/index.html':
-  ensure  => 'present',
-  content => 'Holberton School',
-  mode    => '0644',
-  owner   => 'root',
-  group   => 'root'
+  content => 'Hello World!',
+  require => Package['nginx'],
 }
 
-file_line { 'Set 301 redirection':
-  ensure   => 'present',
-  after    => 'server_name\ _;',
-  path     => '/etc/nginx/sites-available/default',
-  multiple => true,
-  line     => $content,
-  notify   => Exec['restart nginx'],
-  require  => File['/var/www/html/index.html']
+file { '/etc/nginx/sites-available/default':
+  content => "server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    root /var/www/html;
+    index index.html index.htm;
+
+    location / {
+      try_files \$uri \$uri/ =404;
+    }
+
+    rewrite ^/redirect_me https://www.youtube.com/watch?v=QH2-TGUlwu4 permanent;
+
+    error_page 404 /404.html;
+    location = /404.html {
+      internal;
+    }
+  }",
+  require => Package['nginx'],
+  notify  => Service['nginx'],
+}
+
+# Start and enable Nginx
+service { 'nginx':
+  ensure => running,
+  enable => true,
 }

@@ -1,19 +1,27 @@
 #!/usr/bin/env bash
-# Configures a new ubuntu machine by installing
-# Nginx where it should be listening on port 80
-# Serve a page that would return a Hello World string
 
-link="https://www.youtube.com/watch?v=QH2-TGUlwu4"
-new_conf="server_name _;\n\trewrite ^/redirect_me/$ $link permanent;"
-location_error="location = /404.html {\n\t\troot /var/www/html/;\n\t\tinternal;\n"
-error_directive="error_page 404 /404.html;\n\t$location_error"
-error_404="}\n\n\t$error_directive\t}"
+# Install Nginx if not already installed
+if ! dpkg -l | grep -q nginx; then
+    apt-get update
+    apt-get install -y nginx
+fi
 
-apt update
-apt install -y nginx
-ufw allow 'Nginx HTTP'
-echo "Hello World!" > /var/www/html/index.html
+# Configure Nginx to use a custom 404 page
+sed -i '/server_name _;/a \
+error_page 404 /404.html;\
+location = /404.html {\
+    root /var/www/html;\
+    internal;\
+}' /etc/nginx/sites-available/default
+
+# Create the custom 404 page
 echo "Ceci n'est pas une page" > /var/www/html/404.html
-sed -i "s|server_name\ _;|$new_conf|" /etc/nginx/sites-available/default
-sed -i "0,/}/ s|}|$error_404|" /etc/nginx/sites-available/default
+
+# Remove default index.html
+rm -f /var/www/html/index.nginx-debian.html
+
+# Create a simple index.html
+echo "Hello World!" > /var/www/html/index.html
+
+# Restart Nginx
 service nginx restart
