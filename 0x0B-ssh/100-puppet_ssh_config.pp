@@ -1,5 +1,23 @@
-#!/usr/bin/env bash
-#This script creates an RSA key pair with 4096 bits, protected by the passphrase "betty", and saves the private key as "school"
-ssh-keygen -t rsa -b 4096 -f school -N "betty"
-echo "" >> school
-chmod 600 school
+# Manage the SSH client configuration file
+file { '/etc/ssh/ssh_config':
+  ensure => present,
+  owner  => 'root',
+  group  => 'root',
+  mode   => '0644',
+}
+
+# Ensure the PasswordAuthentication option is set to 'no'
+file_line { 'Turn off passwd auth':
+  ensure => present,
+  path   => '/etc/ssh/ssh_config',
+  line   => 'PasswordAuthentication no',
+  match  => '^PasswordAuthentication',
+}
+
+# Ensure the IdentityFile option is set to '~/.ssh/school'
+file_line { 'Declare identity file':
+  ensure => present,
+  path   => '/etc/ssh/ssh_config',
+  line   => 'IdentityFile ~/.ssh/school',
+  match  => '^IdentityFile',
+}
