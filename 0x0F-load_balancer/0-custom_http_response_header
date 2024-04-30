@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Configure the server with the X-Served-By custom HTTP header
+
+# Update package lists
+sudo apt-get update
+
+# Install Nginx if it's not already installed
+sudo apt-get install -y nginx
+
+# Create a custom Nginx configuration file
+sudo bash -c 'printf "server {\n\tlisten 80 default_server;\n\tlisten [::]:80 default_server;\n\tadd_header X-Served-By \"$HOSTNAME\";\n\troot /var/www/html;\n\tindex index.html index.htm index.nginx-debian.html;\n\tlocation / {\n\t\ttry_files \$uri \$uri/ =404;\n\t}\n}" > /etc/nginx/sites-available/default'
+
+# Remove the default symlink
+sudo rm -f /etc/nginx/sites-enabled/default
+
+# Create a new symlink
+sudo ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
+
+# Restart Nginx
+sudo systemctl restart nginx
