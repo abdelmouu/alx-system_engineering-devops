@@ -7,13 +7,32 @@ sudo apt-get update
 # Install Nginx if it's not already installed
 sudo apt-get install -y nginx
 
-# Create a custom Nginx configuration file
-sudo bash -c 'printf "server {\n\tlisten 80 default_server;\n\tlisten [::]:80 default_server;\n\tadd_header X-Served-By \"$HOSTNAME\";\n\troot /var/www/html;\n\tindex index.html index.htm index.nginx-debian.html;\n\tlocation / {\n\t\ttry_files \$uri \$uri/ =404;\n\t}\n}" > /etc/nginx/sites-available/default'
+# Get the hostname
+HOSTNAME=$(hostname)
 
-# Remove the default symlink
+# Remove default Nginx configuration
 sudo rm -f /etc/nginx/sites-enabled/default
 
-# Create a new symlink
+# Create a custom Nginx configuration file
+sudo tee /etc/nginx/sites-available/default << EOF
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+
+    root /var/www/html;
+    index index.html index.htm;
+
+    server_name ${HOSTNAME};
+
+    location / {
+        try_files \$uri \$uri/ =404;
+    }
+
+    add_header X-Served-By "${HOSTNAME}";
+}
+EOF
+
+# Create a symlink for the custom configuration
 sudo ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
 
 # Restart Nginx
