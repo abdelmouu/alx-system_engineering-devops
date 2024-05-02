@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# debugging nginx port 80
+# Configure the server to enable Nginx on 80 port
 
-sudo ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
-sudo service nginx restart
+ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
+service nginx start
