@@ -1,44 +1,32 @@
 #!/usr/bin/env bash
-# Install and configure HAProxy load balancer
+# Create a script to install and configure HAProxy on lb-01 server
+# Configure HAProxy to send traffic to web-01 and web-02 servers
+# Distribute requests using a roundrobin algorithm
+# Make sure that HAProxy can be managed via an init script
 
-# Update package lists
-sudo apt-get update
+# Install and configure HAproxy on my lb-01 server.
+sudo apt-get -y update
+apt-get -y install haproxy
 
-# Install HAProxy
-sudo apt-get install -y haproxy
+# edit config file
+server_config=\
+"
+frontend  abdel_frontend
+        bind *:80
+        mode http
+        default_backend abdel_backend
+backend abdel_backend
+        balance roundrobin
+        server 531206-web-01 54.84.68.221:80 check
+        server 531206-web-02 100.25.165.227:80 check
+"
+echo "$server_config" | sudo tee -a /etc/haproxy/haproxy.cfg
 
-# Create HAProxy configuration file
-sudo bash -c 'printf "%s\n" "
-global
-    log /dev/log local0
-    maxconn 2000
-    chroot /var/lib/haproxy
-    stats socket /run/haproxy/admin.sock mode 660 level admin
-    user haproxy
-    group haproxy
+# enable haproxy to be started by init script
+echo "ENABLED=1" | sudo tee -a /etc/default/haproxy
 
-defaults
-    log     global
-    mode    http
-    option  httplog
-    option  dontlognull
-    retries 3
-    option redispatch
-    timeout connect 5000
-    timeout client 50000
-    timeout server 50000
+# Testing the HAproxy configuration file
+sudo haproxy -c -f /etc/haproxy/haproxy.cfg
 
-frontend http-in
-    bind *:80
-    mode http
-    default_backend web-backend
-
-backend web-backend
-    balance roundrobin
-    server web-01 54.84.68.221:80 check
-    server web-02 100.25.165.227:80 check
-" | sudo tee /etc/haproxy/haproxy.cfg > /dev/null'
-
-# Enable HAProxy service and start it
-sudo sed -i 's/ENABLED=0/ENABLED=1/g' /etc/default/haproxy
-sudo systemctl restart haproxy
+# Restart the Nginx service
+sudo service haproxy restart
