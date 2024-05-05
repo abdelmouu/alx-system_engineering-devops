@@ -1,39 +1,28 @@
 #!/usr/bin/env bash
-# Configure the server with the X-Served-By custom HTTP header
+# Customizing a 404-error_page
 
-# Update package lists
+# Updating Packages before performing installations
 sudo apt-get update
-
-# Install Nginx if it's not already installed
 sudo apt-get install -y nginx
 
-# Get the hostname
-HOSTNAME=$(hostname)
+# Creating an index.html page
+echo "Hello World!" | sudo tee /var/www/html/index.html
 
-# Remove default Nginx configuration
-sudo rm -f /etc/nginx/sites-enabled/default
+# Performing a "moved permanently redirection" (301)
+new_string="server_name _;\n\trewrite ^\/redirect_me https:\/\/github.com\/MarkEddy001 permanent;"
+sudo sed -i "s/server_name _;/$new_string/" /etc/nginx/sites-enabled/default
 
-# Create a custom Nginx configuration file
-sudo tee /etc/nginx/sites-available/default << EOF
-server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
+# Creating a 404 Custom error page
+echo "Ceci n'est pas une page" | sudo tee /var/www/html/404.html
+new_string="listen 80 default_server;\n\terror_page 404 \/404.html;\n\tlocation = \/404.html {\n\t\troot \/var\/www\/html;\n\t\tinternal;\n\t}"
 
-    root /var/www/html;
-    index index.html index.htm;
+sudo sed -i "s/listen 80 default_server;/$new_string/" /etc/nginx/sites-enabled/default
 
-    server_name ${HOSTNAME};
+# Creating an HTTP response header
+sudo sed -i "/server_name _/a add_header X-Served-By $HOSTNAME;" /etc/nginx/sites-enabled/default
 
-    location / {
-        try_files \$uri \$uri/ =404;
-    }
+# Testing configurations for syntax errors
+sudo nginx -t
 
-    add_header X-Served-By "${HOSTNAME}";
-}
-EOF
-
-# Create a symlink for the custom configuration
-sudo ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
-
-# Restart Nginx
-sudo systemctl restart nginx
+# Restart nginx after implementing changes
+sudo service nginx restart
