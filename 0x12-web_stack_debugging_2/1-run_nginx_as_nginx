@@ -33,25 +33,19 @@ chown -R nginx:nginx /var/log/nginx
 chown -R nginx:nginx /var/www/html
 
 # Check Nginx configuration syntax
-nginx -t
-if [ $? -ne 0 ]; then
+if nginx -t; then
+    # Start Nginx to apply changes
+    service nginx start
+
+    # Check Nginx status
+    if pgrep -x nginx > /dev/null; then
+        echo "Nginx has been configured to run as the nginx user and listen on port 8080."
+    else
+        echo "Failed to start Nginx."
+        exit 1
+    fi
+else
     echo "Nginx configuration syntax is invalid."
     exit 1
 fi
-
-# Start Nginx to apply changes
-service nginx start
-
-# Check Nginx status
-if [ $? -ne 0 ]; then
-    echo "Failed to start Nginx. Checking error logs..."
-    tail -n 20 /var/log/nginx/error.log
-    exit 1
-fi
-
-# Verify Nginx is running as nginx user and listening on port 8080
-ps aux | grep '[n]ginx'
-ss -tuln | grep ':8080'
-
-echo "Nginx has been configured to run as the nginx user and listen on port 8080."
 
