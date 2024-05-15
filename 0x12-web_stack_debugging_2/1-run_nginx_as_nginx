@@ -2,7 +2,7 @@
 # This script configures Nginx to run as the nginx user and listen on port 8080
 
 # Stop the nginx service if it's already running
-systemctl stop nginx
+service nginx stop
 
 # Modify the nginx user to set appropriate permissions
 usermod -u 101 -d /usr/share/nginx -s /sbin/nologin nginx
@@ -16,4 +16,4 @@ sed -i '/^\\s\*user /s/user .\*/user nginx;/' /etc/nginx/nginx.conf
 sed -i '/^\\s\*listen /s/listen .\*/listen 8080 default_server;/' /etc/nginx/nginx.conf
 
 # Start the nginx service
-systemctl start nginx
+service nginx start
