@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-
 # This script configures Nginx to run as the nginx user and listen on port 8080
 
 # Stop the nginx service if it's already running
