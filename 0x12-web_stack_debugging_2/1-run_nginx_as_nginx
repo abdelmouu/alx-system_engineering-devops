@@ -1,19 +1,57 @@
 #!/usr/bin/env bash
-# This script configures Nginx to run as the nginx user and listen on port 8080
+# Ensure Nginx runs as the nginx user and listens on port 8080
 
-# Stop the nginx service if it's already running
+# Define Nginx configuration files
+DEFAULT_SITE_CONF="/etc/nginx/sites-available/default"
+NGINX_CONF="/etc/nginx/nginx.conf"
+
+# Stop Nginx if running
 service nginx stop
 
-# Modify the nginx user to set appropriate permissions
-usermod -u 101 -d /usr/share/nginx -s /sbin/nologin nginx
+# Remove duplicate listen directives on port 8080 to avoid conflicts
+sed -i '/listen 8080;/d' "$DEFAULT_SITE_CONF"
 
-# Change ownership of necessary directories to the nginx user
+# Ensure Nginx site configuration listens on port 8080
+if grep -q "listen 80;" "$DEFAULT_SITE_CONF"; then
+    sed -i 's/listen 80;/listen 8080;/' "$DEFAULT_SITE_CONF"
+fi
+
+if grep -q "listen \[::\]:80;" "$DEFAULT_SITE_CONF"; then
+    sed -i 's/listen \[::\]:80;/listen [::]:8080;/' "$DEFAULT_SITE_CONF"
+fi
+
+# Ensure Nginx is configured to run as the nginx user
+if grep -q "^user " "$NGINX_CONF"; then
+    sed -i 's/^user .*/user nginx;/' "$NGINX_CONF"
+else
+    sed -i '/^events {/i user nginx;' "$NGINX_CONF"
+fi
+
+# Ensure proper permissions on Nginx directories
+chown -R nginx:nginx /var/lib/nginx
 chown -R nginx:nginx /var/log/nginx
-chown -R nginx:nginx /var/cache/nginx
+chown -R nginx:nginx /var/www/html
 
-# Modify the nginx.conf file to run nginx as the nginx user and listen on port 8080
-sed -i '/^\\s\*user /s/user .\*/user nginx;/' /etc/nginx/nginx.conf
-sed -i '/^\\s\*listen /s/listen .\*/listen 8080 default_server;/' /etc/nginx/nginx.conf
+# Check Nginx configuration syntax
+nginx -t
+if [ $? -ne 0 ]; then
+    echo "Nginx configuration syntax is invalid."
+    exit 1
+fi
 
-# Start the nginx service
+# Start Nginx to apply changes
 service nginx start
+
+# Check Nginx status
+if [ $? -ne 0 ]; then
+    echo "Failed to start Nginx. Checking error logs..."
+    tail -n 20 /var/log/nginx/error.log
+    exit 1
+fi
+
+# Verify Nginx is running as nginx user and listening on port 8080
+ps aux | grep '[n]ginx'
+ss -tuln | grep ':8080'
+
+echo "Nginx has been configured to run as the nginx user and listen on port 8080."
+
