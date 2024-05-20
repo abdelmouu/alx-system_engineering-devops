@@ -1,37 +1,43 @@
 #!/usr/bin/python3
+"""Given an Employee ID, returns information
+about his/her TODO list progress.
 """
-A Script that, uses this REST API, for a given employee ID, returns
-information about his/her TODO list progress
-"""
-
-import json
 import requests
 from sys import argv
 
+if __name__ == '__main__':
+    try:
+        emp_id = int(argv[1])
+    except ValueError:
+        exit()
 
-if __name__ == "__main__":
+    api_url = 'https://jsonplaceholder.typicode.com'
+    user_uri = '{api}/users/{id}'.format(api=api_url, id=emp_id)
+    todo_uri = '{user_uri}/todos'.format(user_uri=user_uri)
 
-    sessionReq = requests.Session()
+    # User Response
+    res = requests.get(user_uri).json()
 
-    idEmp = argv[1]
-    idURL = 'https://jsonplaceholder.typicode.com/users/{}/todos'.format(idEmp)
-    nameURL = 'https://jsonplaceholder.typicode.com/users/{}'.format(idEmp)
+    # Name of the employee
+    name = res.get('name')
 
-    employee = sessionReq.get(idURL)
-    employeeName = sessionReq.get(nameURL)
+    # User TODO Response
+    res = requests.get(todo_uri).json()
 
-    json_req = employee.json()
-    name = employeeName.json()['name']
+    # Total number of tasks, the sum of completed and non-completed tasks
+    total = len(res)
 
-    totalTasks = 0
+    # Number of non-completed tasks
+    non_completed = sum([elem['completed'] is False for elem in res])
 
-    for done_tasks in json_req:
-        if done_tasks['completed']:
-            totalTasks += 1
+    # Number of completed tasks
+    completed = total - non_completed
 
-    print("Employee {} is done with tasks({}/{}):".
-          format(name, totalTasks, len(json_req)))
+    # Formatting the expected output
+    str = "Employee {emp_name} is done with tasks({completed}/{total}):"
+    print(str.format(emp_name=name, completed=completed, total=total))
 
-    for done_tasks in json_req:
-        if done_tasks['completed']:
-            print("\t " + done_tasks.get('title'))
+    # Printing completed tasks
+    for elem in res:
+        if elem.get('completed') is True:
+            print('\t', elem.get('title'))
