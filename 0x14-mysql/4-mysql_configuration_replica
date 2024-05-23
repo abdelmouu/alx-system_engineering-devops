@@ -39,5 +39,3 @@ symbolic-links=0
 #added lines
 server-id=2
 relay-log=/var/log/mysql/mysql-relay-bin.log
-ubuntu@531206-web-02:~$ 
-
